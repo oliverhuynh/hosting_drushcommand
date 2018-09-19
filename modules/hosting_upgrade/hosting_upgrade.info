@@ -1,0 +1,5 @@
+name = Hosting Upgrade
+description = Hosting Upgrade On Site
+package = Hosting
+dependencies[] = hosting
+core = 7.x

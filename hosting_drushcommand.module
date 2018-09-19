@@ -1,0 +1,110 @@
+<?php
+/**
+ * @file
+ * Contains core functionality for the Hosting Reinstall module.
+ */
+
+/**
+ * Implements hook_hosting_tasks().
+ */
+function hosting_drushcommand_hosting_tasks() {
+  $tasks = array();
+
+  $tasks['site']['drushcommand'] = array(
+    'title' => t('Drush Command'),
+    'description' => t('Drush command.'),
+    'dialog' => TRUE,
+  );
+
+  $customcommands = module_invoke_all('customdrushcommand');
+  foreach ($customcommands as $id => $command) {
+    $tasks['site'][$id] = array(
+      'title' => $command['title'],
+      'description' => $command['description'],
+      'dialog' => TRUE,
+    );
+  }
+
+  return $tasks;
+}
+
+/**
+ * Implements hook_hosting_tasks() of files
+ */
+function hosting_task_customcommand_form_exec($id, $node = array()) {
+  $customcommands = module_invoke_all('customdrushcommand');
+  $form = array();
+  foreach ($customcommands[$id]['arguments'] as $key => $arg) {
+    $form[$key] = array(
+      '#type' => 'textfield',
+      '#title' => $arg['title'],
+      '#description' => $arg['description'],
+    );
+    if (isset($arg['default_value'])) {
+      $form[$key]['#default_value'] = $arg['default_value'];
+    }
+  }
+  foreach ($customcommands[$id]['options'] as $key => $arg) {
+    $form[$key] = array(
+      '#type' => 'textfield',
+      '#title' => $arg['title'],
+      '#description' => $arg['description'],
+    );
+    if (isset($arg['default_value'])) {
+      $form[$key]['#default_value'] = $arg['default_value'];
+    }
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_hosting_tasks() of drushcommand
+ */
+function hosting_task_drushcommand_form($node = array()) {
+  $form = array();
+
+  $form['drushfullcommand'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Drush command'),
+    '#description' => t('Drush command. Example: cc all, up --security-only, image-flush --all. Tokens available: [site:root] [vars:exclude:hdc_options:--exclude]'),
+  );
+
+  $form['triggeronremote'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Drush trigger on remote'),
+  );
+
+  $form['drushcommand'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Drush command'),
+    '#description' => t('Drush command. Example: cc all, up'),
+  );
+
+  $form['drushargument'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Drush argument'),
+    '#description' => t('Drush argument. Example: cc all, up'),
+  );
+
+  $form['drushoptions'] = array(
+    '#type' => 'hidden',
+    '#title' => t('Drush options'),
+    '#description' => t('Drush options. Example: --security-only'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_hosting_tasks() of drushcommand
+ */
+function hosting_task_drushcommand_form_validate($form, &$form_state) {
+  $values = &$form_state['values']['parameters'];
+  $values['drushfullcommand'] = trim($values['drushfullcommand']);
+  include_once('sites/all/libraries/php-arguments/vendor/autoload.php');
+  $parts = \Clue\Arguments\split($values['drushfullcommand']);
+  $parts += array('', '', '');
+  $values['drushcommand'] = array_shift($parts);
+  $values['drushargument'] = json_encode($parts);
+  $values['drushoptions'] = json_encode(array());
+}

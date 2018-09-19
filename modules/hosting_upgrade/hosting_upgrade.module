@@ -1,0 +1,3 @@
+<?php
+
+include_once 'hosting_upgrade.drush.inc';
